@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.VBox?>
+
+<?import javafx.scene.layout.HBox?>
+<VBox xmlns="http://javafx.com/javafx/20"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.javachat.controller.LoginController"
+      alignment="CENTER" spacing="15"
+      stylesheets="@../css/style.css"
+      styleClass="root-pane">
+
+    <padding>
+        <Insets top="40" right="40" bottom="40" left="40"/>
+    </padding>
+
+    <Label text="JavaChat" styleClass="title"/>
+
+    <TextField fx:id="usernameField"
+               promptText="Usuario"
+               styleClass="input"/>
+
+    <PasswordField fx:id="passwordField"
+                   promptText="Contraseña"
+                   styleClass="input"/>
+
+    <HBox spacing="10" alignment="CENTER">
+        <Button text="Iniciar sesión"
+                onAction="#onLoginClicked"
+                styleClass="btn-primary"/>
+        <Button text="Registro"
+                onAction="#onRegisterClicked"
+                styleClass="btn-secondary"/>
+    </HBox>
+
+    <Label fx:id="errorLabel"
+           textFill="red"
+           styleClass="error"/>
+</VBox>

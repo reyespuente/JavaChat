@@ -8,7 +8,11 @@ module com.example.javachat {
     requires org.kordamp.ikonli.javafx;
     requires org.kordamp.bootstrapfx.core;
     requires eu.hansolo.tilesfx;
+    requires com.google.gson;
 
     opens com.example.javachat to javafx.fxml;
+    opens com.example.javachat.controller to javafx.fxml;
+    opens com.example.javachat.service to com.google.gson;
+
     exports com.example.javachat;
 }

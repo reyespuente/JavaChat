@@ -1,0 +1,110 @@
+/* Improtar fuente de Poppins*/
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap');
+
+
+.root-pane {
+    -fx-background-color:white;
+    -fx-background-radius: 24;
+    -fx-border-radius: 24;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0, 0, 4);
+}
+
+.title {
+    -fx-font-family: 'Poppins', sans-serif;
+    -fx-font-size: 28px;
+    -fx-font-weight: 700;
+    -fx-text-fill: linear-gradient(
+            from 0% 0% to 100% 0%,
+            #FF6EC4 0%,
+            #7873F5 50%,
+            #4ADEDE 100%
+    );
+    -fx-padding: 0 0 10 0;
+}
+
+.subtext {
+    -fx-font-family: 'Poppins', sans-serif;
+    -fx-font-size: 14px;
+    -fx-text-fill: white;
+    -fx-opacity: 0.85;
+}
+
+
+.input {
+    -fx-font-family: 'Poppins', sans-serif;
+    -fx-font-size: 14px;
+    -fx-pref-width: 280px;
+    -fx-pref-height: 36px;
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: rgba(0,0,0,0.1);
+    -fx-padding: 0 12 0 12;
+    -fx-prompt-text-fill: derive(-fx-control-inner-background, -30%);
+}
+
+
+.btn-primary {
+    -fx-font-family: 'Poppins', sans-serif;
+    -fx-font-size: 14px;
+    -fx-font-weight: 500;
+    -fx-text-fill: white;
+    -fx-background-color: linear-gradient(
+            from 0% 0% to 100% 0%,
+            #FF6EC4 0%,
+            #7873F5 100%
+    );
+    -fx-background-radius: 12;
+    -fx-padding: 8 24 8 24;
+    -fx-effect: dropshadow(gaussian, rgba(255,110,196,0.6), 10, 0, 0, 2);
+    -fx-cursor: hand;
+}
+.btn-primary:hover {
+    -fx-effect: dropshadow(gaussian, rgba(120,115,245,0.8), 14, 0, 0, 4);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+}
+
+
+.btn-secondary {
+    -fx-font-family: 'Poppins', sans-serif;
+    -fx-font-size: 14px;
+    -fx-font-weight: 500;
+    -fx-text-fill: linear-gradient(
+            from 0% 0% to 100% 0%,
+            #FF6EC4 0%,
+            #7873F5 50%,
+            #4ADEDE 100%
+    );
+    -fx-background-color: transparent;
+    -fx-border-width: 2;
+    -fx-border-color: linear-gradient(
+            from 0% 0% to 100% 0%,
+            #FF6EC4 0%,
+            #7873F5 100%
+    );
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-padding: 6 20 6 20;
+    -fx-cursor: hand;
+}
+.btn-secondary:hover {
+    -fx-background-color: rgba(255,110,196,0.2);
+}
+
+
+.error {
+    -fx-font-family: 'Poppins', sans-serif;
+    -fx-font-size: 12px;
+    -fx-padding: 8 0 0 0;
+    -fx-wrap-text: true;
+}
+
+
+.success {
+    -fx-font-family: 'Poppins', sans-serif;
+    -fx-font-size: 12px;
+    -fx-text-fill: #4CAF50;
+    -fx-padding: 8 0 0 0;
+    -fx-wrap-text: true;
+}
