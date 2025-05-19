@@ -1,5 +1,6 @@
 package com.example.javachat.service;
 
+import com.example.javachat.session.SessionManager;
 import com.google.gson.*;
 import java.io.*;
 import java.net.*;
@@ -7,6 +8,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
 public class ApiService {
+
+    /// //////////////////////////////////////////////
+    boolean debug = true;
+    /// /////////////////////////////////////////////
+
     private final String baseUrl = "https://api.reyespuente.com";
     private String token;
 
@@ -32,13 +38,18 @@ public class ApiService {
 
         int code = conn.getResponseCode();
         // Codigo del stack over
-        InputStream is = code < 400 ? conn.getInputStream() : conn.getErrorStream();
+        InputStream is;
+        if (code < 400) is = conn.getInputStream();
+        else is = conn.getErrorStream();
         String responseJson;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             responseJson = reader.lines().collect(Collectors.joining("\n"));
         }
 
-        System.out.println("POST " + path + " → HTTP " + code + "\n" + responseJson);
+        if (debug){
+            System.out.println("POST " + path + " → HTTP " + code + "\n" + responseJson);
+        }
+
 
         if (code >= 400) {
             throw new IOException("HTTP " + code + ": " + responseJson);
@@ -46,6 +57,36 @@ public class ApiService {
 
         return new Gson().fromJson(responseJson, clazz);
     }
+
+
+    // --- Respuesta de login ---
+    public static class LoginResponse {
+        public String token;
+        public int user_id;
+    }
+
+   //  Hace login en /login.php, guarda el JWT y userId en SessionManager
+    public boolean loginUser(String username, String password) throws IOException {
+        JsonObject payload = new JsonObject();
+        payload.addProperty("username", username);
+        payload.addProperty("password", password);
+
+        LoginResponse resp = post("/login.php", payload, LoginResponse.class);
+        if (resp.token != null && !resp.token.isEmpty()) {
+            this.token = resp.token;
+            // Guarda en sesión global
+            SessionManager.getInstance().setToken(resp.token);
+            SessionManager.getInstance().setUserId(resp.user_id);
+
+            if (debug){
+                System.out.println("JWT obtenido: " + resp.token);
+            }
+
+            return true;
+        }
+        return false;
+    }
+
 
 
     /** DTO para registro */
