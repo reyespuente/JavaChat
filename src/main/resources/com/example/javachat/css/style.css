@@ -108,3 +108,28 @@
     -fx-padding: 8 0 0 0;
     -fx-wrap-text: true;
 }
+
+/* Burbuja de mensaje */
+.bubble-sent {
+    -fx-background-color: linear-gradient(to right, #DCF8C6, #C3E6B1);
+    -fx-background-radius: 12;
+}
+.bubble-received {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+}
+
+/* Contenido dentro de la burbuja */
+.bubble-content {
+    -fx-font-family: 'Poppins', sans-serif;
+    -fx-font-size: 14px;
+    -fx-text-fill: #333;
+}
+
+/* Timestamp pequeño */
+.bubble-timestamp {
+    -fx-font-family: 'Poppins', sans-serif;
+    -fx-font-size: 10px;
+    -fx-text-fill: #777;
+    -fx-alignment: baseline-right;
+}
