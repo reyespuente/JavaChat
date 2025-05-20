@@ -1,15 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx/20"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.example.javachat.controller.ChatController">
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.javachat.controller.ChatController">
 
     <!-- IZQUIERDA -->
     <left>
-        <VBox spacing="8" style="-fx-background-color: #F7F7F7;">
+        <VBox spacing="8" style="-fx-background-color: #F7F7F7;" stylesheets="@../css/style.css">
             <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
                 <tabs>
 
@@ -17,11 +26,11 @@
                         <content>
                             <VBox spacing="8">
                                 <padding>
-                                    <Insets top="10" right="10" bottom="10" left="10"/>
+                                    <Insets bottom="10" left="10" right="10" top="10" />
                                 </padding>
                                 <ListView fx:id="convoList" VBox.vgrow="ALWAYS">
                                     <placeholder>
-                                        <Label text="Sin conversaciones aun"/>
+                                        <Label text="Sin conversaciones aun" />
                                     </placeholder>
                                 </ListView>
                             </VBox>
@@ -33,19 +42,15 @@
                         <content>
                             <VBox spacing="10">
                                 <padding>
-                                    <Insets top="10" right="10" bottom="10" left="10"/>
+                                    <Insets bottom="10" left="10" right="10" top="10" />
                                 </padding>
                                 <HBox spacing="5">
-                                    <TextField fx:id="newContactField"
-                                               promptText="Usuario a agregar"
-                                               HBox.hgrow="ALWAYS"/>
-                                    <Button text="Agregar"
-                                            onAction="#onAddContactClicked"
-                                            styleClass="btn-primary"/>
+                                    <TextField fx:id="newContactField" promptText="Usuario a agregar" HBox.hgrow="ALWAYS" />
+                                    <Button onAction="#onAddContactClicked" styleClass="btn-primary" text="Agregar" />
                                 </HBox>
                                 <ListView fx:id="contactsList" VBox.vgrow="ALWAYS">
                                     <placeholder>
-                                        <Label text="Sin contactos"/>
+                                        <Label text="Sin contactos" />
                                     </placeholder>
                                 </ListView>
                             </VBox>
@@ -57,9 +62,9 @@
                         <content>
                             <VBox alignment="CENTER" spacing="10">
                                 <padding>
-                                    <Insets top="20" right="20" bottom="20" left="20"/>
+                                    <Insets bottom="20" left="20" right="20" top="20" />
                                 </padding>
-                                <Label text="Aquí irá tu perfil"/>
+                                <Label text="Aquí irá tu perfil" />
                             </VBox>
                         </content>
                     </Tab>
@@ -69,9 +74,9 @@
                         <content>
                             <VBox alignment="CENTER" spacing="10">
                                 <padding>
-                                    <Insets top="20" right="20" bottom="20" left="20"/>
+                                    <Insets bottom="20" left="20" right="20" top="20" />
                                 </padding>
-                                <Label text="Aquí irán tus grupos"/>
+                                <Label text="Aquí irán tus grupos" />
                             </VBox>
                         </content>
                     </Tab>
@@ -83,28 +88,29 @@
 
     <!-- CENTRO -->
     <center>
-        <VBox spacing="5">
+        <VBox prefHeight="633.0" prefWidth="605.0" spacing="5" stylesheets="@../css/style.css">
             <padding>
-                <Insets top="10" right="10" bottom="10" left="10"/>
+                <Insets bottom="10" left="10" right="10" top="10" />
             </padding>
 
             <!-- Encabezado conversación -->
             <HBox alignment="CENTER_LEFT" spacing="10">
                 <padding>
-                    <Insets top="0" right="0" bottom="10" left="0"/>
+                    <Insets bottom="10" left="0" right="0" top="0" />
                 </padding>
-                <Label fx:id="convoTitle"
-                       text="Selecciona un chat..."
-                       styleClass="title"/>
-                <Region HBox.hgrow="ALWAYS"/>
-                <Button text="Info" onAction="#onInfoClicked"/>
+                <Label fx:id="convoTitle" prefHeight="50.0" prefWidth="509.0" styleClass="title" text="Selecciona un chat...">
+               <font>
+                  <Font size="10.0" />
+               </font></Label>
+                <Region HBox.hgrow="ALWAYS" />
+                <Button onAction="#onInfoClicked" text="Info" />
             </HBox>
 
             <!-- Mensajes -->
-            <ScrollPane fitToWidth="true" fitToHeight="true" VBox.vgrow="ALWAYS">
+            <ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
                 <VBox fx:id="messagesBox" spacing="8">
                     <padding>
-                        <Insets top="0" right="5" bottom="0" left="5"/>
+                        <Insets bottom="0" left="5" right="5" top="0" />
                     </padding>
                 </VBox>
             </ScrollPane>
@@ -112,18 +118,14 @@
 
             <HBox spacing="5">
                 <padding>
-                    <Insets top="10" right="0" bottom="0" left="0"/>
+                    <Insets bottom="0" left="0" right="0" top="10" />
                 </padding>
-                <TextField fx:id="messageField"
-                           HBox.hgrow="ALWAYS"
-                           promptText="Escribe un mensaje..."/>
-                <Button text="Enviar"
-                        onAction="#onSendClicked"
-                        styleClass="btn-primary"/>
+                <TextField fx:id="messageField" promptText="Escribe un mensaje..." HBox.hgrow="ALWAYS" />
+                <Button onAction="#onSendClicked" styleClass="btn-primary" text="Enviar" />
             </HBox>
 
             <!-- Label de error -->
-            <Label fx:id="errorLabel" styleClass="error"/>
+            <Label fx:id="errorLabel" styleClass="error" />
         </VBox>
     </center>
 </BorderPane>
