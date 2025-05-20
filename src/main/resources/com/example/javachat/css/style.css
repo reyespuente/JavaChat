@@ -122,7 +122,7 @@
 /* Contenido dentro de la burbuja */
 .bubble-content {
     -fx-font-family: 'Poppins', sans-serif;
-    -fx-font-size: 14px;
+    -fx-font-size: 11px;
     -fx-text-fill: #333;
 }
 
