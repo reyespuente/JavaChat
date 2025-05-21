@@ -107,12 +107,15 @@
             </HBox>
 
             <!-- Mensajes -->
-            <ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
-                <VBox fx:id="messagesBox" spacing="8">
-                    <padding>
-                        <Insets bottom="0" left="5" right="5" top="0" />
-                    </padding>
-                </VBox>
+            <ScrollPane fx:id="messageScrollPane"
+                        fitToWidth="true" fitToHeight="true" VBox.vgrow="ALWAYS">
+                <content>
+                    <VBox fx:id="messagesBox" spacing="8">
+                        <padding>
+                            <Insets bottom="0" left="5" right="5" top="0" />
+                        </padding>
+                    </VBox>
+                </content>
             </ScrollPane>
 
 

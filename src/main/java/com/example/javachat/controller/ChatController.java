@@ -34,6 +34,8 @@ public class ChatController {
     @FXML private TextField    newContactField;
     @FXML private ListView<User> contactsList;  // User = modelo de usuario (id, username, nombre)
 
+    @FXML private ScrollPane messageScrollPane; // para mantenel siempre los mensajes ultimos visibles
+
 
     private Conversation currentConv;
     private int currentConversationId = 0;
@@ -282,6 +284,13 @@ public class ChatController {
         for (Message m : conv.getMessages()) {
             messagesBox.getChildren().add(MessageBubbleFactory.create(m));
         }
+
+        Platform.runLater(() -> {
+            // Mueve la barra hasta abajo para mostrar los ultimos mensajes
+            messageScrollPane.setVvalue(1.0);
+        });
+
+
     }
 
 }
