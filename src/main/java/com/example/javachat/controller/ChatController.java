@@ -27,7 +27,7 @@ public class ChatController {
     // Center pane
     @FXML private Label    convoTitle;
     @FXML private VBox     messagesBox;
-    @FXML private TextField messageField;
+    @FXML private TextArea messageField;
     @FXML private Label errorLabel;
 
     // Nuevos para Contactos
@@ -289,7 +289,6 @@ public class ChatController {
             // Mueve la barra hasta abajo para mostrar los ultimos mensajes
             messageScrollPane.setVvalue(1.0);
         });
-
 
     }
 

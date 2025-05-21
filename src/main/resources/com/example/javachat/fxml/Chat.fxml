@@ -13,6 +13,7 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
+<?import javafx.scene.control.TextArea?>
 
 <BorderPane stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.javachat.controller.ChatController">
 
@@ -121,11 +122,19 @@
 
             <HBox spacing="5">
                 <padding>
-                    <Insets bottom="0" left="0" right="0" top="10" />
+                    <Insets top="10" right="0" bottom="0" left="0"/>
                 </padding>
-                <TextField fx:id="messageField" promptText="Escribe un mensaje..." HBox.hgrow="ALWAYS" />
-                <Button onAction="#onSendClicked" styleClass="btn-primary" text="Enviar" />
+
+                <TextArea fx:id="messageField"
+                          HBox.hgrow="ALWAYS"
+                          promptText="Escribe un mensaje..."
+                          wrapText="true"
+                          prefRowCount="3"/>
+                <Button text="Enviar"
+                        onAction="#onSendClicked"
+                        styleClass="btn-primary"/>
             </HBox>
+
 
             <!-- Label de error -->
             <Label fx:id="errorLabel" styleClass="error" />
