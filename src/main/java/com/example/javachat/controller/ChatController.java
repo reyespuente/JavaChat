@@ -11,6 +11,8 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -20,6 +22,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 import java.awt.*;
 import java.io.File;
@@ -519,4 +522,19 @@ public class ChatController {
         messagesBox.getChildren().add(bubbleContainer);
     }
 
+    @FXML
+    private void onLogoutClicked() {
+        SessionManager.getInstance().clear();
+
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/javachat/fxml/Login.fxml")
+            );
+            Stage stage = (Stage) convoList.getScene().getWindow();
+            stage.setScene(new Scene(loader.load()));
+            stage.setTitle("JavaChat – Login");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
 }

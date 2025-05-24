@@ -80,23 +80,13 @@
                                 <Button onAction="#onProfileSaveClicked" styleClass="btn-primary" text="Guardar cambios" />
                                 <Label fx:id="profileMsgLabel" styleClass="error" />
 
+                                <Button text="Cerrar sesión"
+                                        onAction="#onLogoutClicked"
+                                        styleClass="btn-secondary"/>
+
                             </VBox>
                         </content>
                     </Tab>
-
-
-
-                    <Tab text="Grupos">
-                        <content>
-                            <VBox alignment="CENTER" spacing="10">
-                                <padding>
-                                    <Insets bottom="20" left="20" right="20" top="20" />
-                                </padding>
-                                <Label text="Aquí irán tus grupos" />
-                            </VBox>
-                        </content>
-                    </Tab>
-
                 </tabs>
             </TabPane>
         </VBox>

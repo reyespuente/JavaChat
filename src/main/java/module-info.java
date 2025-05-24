@@ -10,6 +10,7 @@ module com.example.javachat {
     requires eu.hansolo.tilesfx;
     requires com.google.gson;
     requires java.desktop;
+    requires java.prefs;
 
     opens com.example.javachat to javafx.fxml;
     opens com.example.javachat.controller to javafx.fxml;
