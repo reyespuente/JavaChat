@@ -226,13 +226,17 @@ public class ApiService {
 
 
 
-    // Devuelve lista de contactos
     public List<User> listContacts() throws IOException {
         String json = get("/listContacts.php");
         Type t = new TypeToken<List<ContactDTO>>(){}.getType();
         List<ContactDTO> dtos = new Gson().fromJson(json, t);
         return dtos.stream()
-                .map(d -> new User(d.id, d.username, d.nombre))
+                .map(d -> new User(
+                        d.id,
+                        d.username,
+                        d.nombre_completo,
+                        d.mensaje_estado       // corregido :v
+                ))
                 .collect(Collectors.toList());
     }
 
@@ -241,8 +245,9 @@ public class ApiService {
         JsonObject body = new JsonObject();
         body.addProperty("contact_id", contactId);
         StatusResponse resp = post("/addContact.php", body, StatusResponse.class);
-        return "pending".equals(resp.status);
+        return "ok".equals(resp.status);
     }
+
 
     // Obtiene ID de usuario a partir de su username
     public int getUserIdByUsername(String username) throws IOException {
@@ -254,10 +259,34 @@ public class ApiService {
 
     // DTOs Contacto
     private static class ContactDTO {
-        int id;
+        int    id;
         String username;
-        String nombre;
+        String nombre_completo;
+        String mensaje_estado;
     }
+
     private static class StatusResponse { String status; }
+
+    private static class MemberDTO {
+        int    id;
+        String username;
+        String nombre_completo;
+        String mensaje_estado;
+    }
+
+    public List<User> getConversationMembers(int conversationId) throws IOException {
+        String json = get("/listMembers.php?conversation_id=" + conversationId);
+        Type listType = new TypeToken<List<MemberDTO>>(){}.getType();
+        List<MemberDTO> dtos = new Gson().fromJson(json, listType);
+
+        return dtos.stream()
+                .map(d -> new User(
+                        d.id,
+                        d.username,
+                        d.nombre_completo,
+                        d.mensaje_estado
+                ))
+                .collect(Collectors.toList());
+    }
 
 }

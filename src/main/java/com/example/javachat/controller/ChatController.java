@@ -4,6 +4,7 @@ import com.example.javachat.model.Conversation;
 import com.example.javachat.model.Message;
 import com.example.javachat.model.User;
 import com.example.javachat.service.ApiService;
+import com.example.javachat.session.SessionManager;
 import com.example.javachat.ui.ConversationCell;
 import com.example.javachat.ui.MessageBubbleFactory;
 import javafx.animation.Animation;
@@ -94,12 +95,10 @@ public class ChatController {
         });
         contactsList.getSelectionModel().selectedItemProperty().addListener((obs, old, u) -> {
             if (u != null) {
-                startChatWith(u.getId());
-                // Cambia a la pestaña de Chats
+                startChatWith(u);
                 tabPane.getSelectionModel().select(0);
             }
         });
-
         //Listener para volver a renderizar al regresar a la pestaña "Chats"
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if ("Chats".equals(newTab.getText())) {
@@ -206,10 +205,63 @@ public class ChatController {
     }
 
 
-
+    // mostrar la informacion del usuario en el boton de info que ya estaba en la ecena del chat
     @FXML
     private void onInfoClicked() {
-        // PENDIENTE ////////////////////////
+        Conversation conv = convoList.getSelectionModel().getSelectedItem();
+        if (conv == null) return;
+
+        new Thread(() -> {
+            try {
+                List<User> members = ApiService.getInstance().getConversationMembers(conv.getId());
+                // NO MOSTRAR MI MISMA INFOOOOOO
+                int me = SessionManager.getInstance().getUserId();
+                List<User> others = members.stream()
+                        .filter(u -> u.getId() != me)
+                        .toList();
+
+                Platform.runLater(() -> {
+                    if (others.size() == 1) {
+                        // mostrar la info
+                        showUserInfo(others.get(0));
+                    } else {
+                        // grupo como es grupo hay q seleccionar a cual le vamos a ver la info
+                        ChoiceDialog<User> dlg = new ChoiceDialog<>(others.get(0), others);
+                        dlg.setTitle("Participantes de “" + conv.getTitle() + "”");
+                        dlg.setHeaderText("Selecciona un usuario");
+                        dlg.setContentText("Usuario:");
+                        dlg.showAndWait().ifPresent(this::showUserInfo);
+                    }
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+                Platform.runLater(() ->
+                        new Alert(Alert.AlertType.ERROR,
+                                "No se pudo cargar la información del chat",
+                                ButtonType.OK)
+                                .showAndWait()
+                );
+            }
+        }).start();
+    }
+
+    //la info
+    private void showUserInfo(User user) {
+        Alert info = new Alert(Alert.AlertType.INFORMATION);
+        info.setTitle("Perfil de " + user.getDisplayName());
+        info.setHeaderText(null);
+
+        String content =
+                "Username: "     + user.getUsername()       + "\n" +
+                        "Nombre: "       + (user.getNombreCompleto() == null
+                        ? "—"
+                        : user.getNombreCompleto()) + "\n" +
+                        "Estado: "       + (user.getMensajeEstado() == null
+                        ? "—"
+                        : user.getMensajeEstado());
+
+        info.setContentText(content);
+        info.showAndWait();
     }
 
     //CARGAR CONTACTOS CON EL ENDPOINT
@@ -251,31 +303,31 @@ public class ChatController {
     }
 
     // Inicia o recupera la conversación y la selecciona en la lista de chats
-    private void startChatWith(int otherUserId) {
+    private void startChatWith(User user) {
         new Thread(() -> {
             try {
-                int convId = ApiService.getInstance().createConversation(otherUserId);
+                int convId = ApiService.getInstance().createConversation(user.getId());
                 Platform.runLater(() -> {
-                    // Si no está ya en la lista agregarla
+                    // 1 Si no existe, lo agregamos con el nombre del user
                     boolean existe = convoList.getItems().stream()
                             .anyMatch(c -> c.getId() == convId);
                     if (!existe) {
-                        Conversation conv = new Conversation(convId, "");
+                        // usa displayName para que aparezca el nombre correcto
+                        Conversation conv = new Conversation(convId, user.getDisplayName());
                         convoList.getItems().add(conv);
                     }
-                    // Seleccionamos esa conversación
+                    // 2 selecciona la conversación creada
                     convoList.getItems().stream()
                             .filter(c -> c.getId() == convId)
                             .findFirst()
-                            .ifPresent(c -> {
-                                convoList.getSelectionModel().select(c);
-                            });
+                            .ifPresent(c -> convoList.getSelectionModel().select(c));
                 });
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }).start();
     }
+
 
     private void renderMessages(Conversation conv) {
         convoTitle.setText(conv.getTitle());

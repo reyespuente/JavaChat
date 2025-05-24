@@ -133,3 +133,60 @@
     -fx-text-fill: #777;
     -fx-alignment: baseline-right;
 }
+
+/* Fondo de las pestañas */
+.tab-pane {
+    -fx-background-color: transparent;
+}
+
+/* fondo de los tabs literalmente*/
+.tab-pane .tab-header-background {
+    -fx-background-color: #F5F5F5;
+    -fx-padding: 0 0 0 0;
+}
+
+/* Ajustes del contenedor de tabs */
+.tab-pane .tab-header-area {
+    -fx-padding: 0 2 0 2; /* pequeño espacio lateral */
+}
+
+/* Estilo base de cada pestaña */
+.tab-pane .tab-header-area .tab {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8 8 0 0;
+    -fx-padding: 8 16;
+    -fx-font-family: 'Poppins', sans-serif;
+    -fx-font-size: 14px;
+    -fx-text-fill: #555;
+    -fx-cursor: hand;
+    -fx-border-color: transparent transparent #E0E0E0 transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-border-radius: 0;
+    -fx-transition: all 0.2s ease;
+}
+
+/* Hover suave sobre pestaña */
+.tab-pane .tab-header-area .tab:hover {
+    -fx-background-color: rgba(120,115,245,0.08);
+}
+
+/* Pestaña seleccionada */
+.tab-pane .tab-header-area .tab:selected {
+    -fx-background-color: linear-gradient(
+            from 0% 0% to 100% 0%,
+            #FF6EC4 0%,
+            #7873F5 100%
+    );
+    -fx-text-fill: white;
+    -fx-border-color: transparent;
+    -fx-border-radius: 8 8 0 0;
+}
+
+/* Contenedor del contenido de la pestaña */
+.tab-pane .tab-content-area {
+    -fx-background-color: white;
+    -fx-padding: 16;
+    -fx-border-color: #E0E0E0;
+    -fx-border-width: 1 0 0 0;
+    -fx-background-radius: 0 0 8 8;
+}
