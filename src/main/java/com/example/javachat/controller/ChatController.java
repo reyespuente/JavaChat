@@ -251,12 +251,16 @@ public class ChatController {
 
         // ERROR CORREGIDO DE DOBLEMENSAJE
         messageField.setDisable(true);
-        System.out.println("Enviando mensaje: \"" + text + "\" a conv " + currentConversationId);
+        if (ApiService.debug) {
+            System.out.println("Enviando mensaje: \"" + text + "\" a conv " + currentConversationId);
+        }
 
         new Thread(() -> {
             try {
                 boolean ok = ApiService.getInstance().sendMessage(currentConversationId, text);
-                System.out.println("sendMessage returned: " + ok);
+                if (ApiService.debug) {
+                    System.out.println("sendMessage returned: " + ok);
+                }
                 Platform.runLater(() -> {
                     messageField.setDisable(false);
                     if (ok) {

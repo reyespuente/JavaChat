@@ -20,7 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class ApiService {
 
     /// //////////////////////////////////////////////
-    boolean debug = true;
+    public static boolean debug = false;
     /// /////////////////////////////////////////////
 
     private final String baseUrl = "https://api.reyespuente.com";
