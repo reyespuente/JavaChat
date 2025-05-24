@@ -1,5 +1,4 @@
 package com.example.javachat.controller;
-
 import com.example.javachat.model.Conversation;
 import com.example.javachat.model.Message;
 import com.example.javachat.model.User;
@@ -22,7 +21,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
-
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
@@ -30,15 +28,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import com.example.javachat.service.ApiService.Attachment;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Node;
-import javafx.scene.layout.HBox;
-
-
-import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Cursor;
 import javafx.scene.control.Hyperlink;
@@ -182,10 +172,10 @@ public class ChatController {
 
         new Thread(() -> {
             try {
-                // 1) Traer solo mensajes nuevos
+                // Traer solo mensajes nuevos
                 List<Message> nuevos = ApiService.getInstance()
                         .getMessages(convId, since);
-                // 2) Determinar el timestamp más reciente
+                // Determinar el timestamp más reciente
                 String maxTs = since;
                 for (Message m : nuevos) {
                     if (m.getSentAt().compareTo(maxTs) > 0) {
@@ -197,13 +187,13 @@ public class ChatController {
 
                 final String newSince = maxTs;
                 Platform.runLater(() -> {
-                    // 3) Añadir cada burbuja + sus adjuntos
+                    // Añadir cada burbuja + sus adjuntos
                     for (Message m : nuevos) {
                         addMessageWithAttachments(m, false);
                     }
-                    // 4) Actualizar para la próxima
+                    // Actualizar para la proxima
                     lastTimestamp.put(convId, newSince);
-                    // 5) Auto‐scroll al fondo
+                    // Auto‐scroll
                     messageScrollPane.setVvalue(1.0);
                 });
             } catch (IOException e) {
@@ -212,14 +202,14 @@ public class ChatController {
         }).start();
     }
 
-    /** Helper para convertir un Attachment en un Node (imagen o enlace) */
+    // Helper para convertir un Attachment en un Node (imagen o enlace)
     private Node createAttachmentNode(Attachment a) {
-        // 1) Construye la URL completa
+        // Construye la URL completa
         String base = ApiService.getInstance().getBaseUrl();
         String url  = base + a.file_url;
 
         if (a.file_type.startsWith("image/")) {
-            // 2) Si es imagen, miniatura clicable
+            // Si es imagen se pone la miniatura en la burbija del chat
             ImageView img = new ImageView(new Image(url, 120, 0, true, true));
             img.setCursor(Cursor.HAND);
             img.setOnMouseClicked(e -> {
@@ -231,15 +221,14 @@ public class ChatController {
             });
             return img;
         } else {
-            // 3) Si no, un enlace al archivo
-            String name = a.file_url.substring(a.file_url.lastIndexOf('/') + 1);
-            Hyperlink link = new Hyperlink(name);
+            // mostramos el nombre del archivo como un enlace
+            String label = a.original_name != null
+                    ? a.original_name
+                    : a.file_url.substring(a.file_url.lastIndexOf('/')+1);
+            Hyperlink link = new Hyperlink(label);
             link.setOnAction(e -> {
-                try {
-                    Desktop.getDesktop().browse(new URI(url));
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
+                try { Desktop.getDesktop().browse(new URI(url)); }
+                catch (Exception ex) { ex.printStackTrace(); }
             });
             return link;
         }
@@ -251,7 +240,12 @@ public class ChatController {
     private void onSendClicked() {
         String text = messageField.getText().trim();
         if (text.isEmpty() || currentConversationId == 0) {
-            System.out.println("Nada que enviar o sin conversación seleccionada");
+            // ahora si mostrarlo en pantalla :v
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Atención");
+            alert.setHeaderText(null);
+            alert.setContentText("No hay mensaje que enviar o no ha seleccionado una conversación.");
+            alert.showAndWait();
             return;
         }
 
@@ -487,13 +481,15 @@ public class ChatController {
         }).start();
     }
 
-    /** Pinta una burbuja de mensaje + sus adjuntos debajo, con la alineación correcta */
+    // los adjuntos se añaden a la burbuja del mensaje
     private void addMessageWithAttachments(Message m, boolean wasFirstLoad) {
-        // 1) Crear burbuja
-        Node bubble = MessageBubbleFactory.create(m);
-        messagesBox.getChildren().add(bubble);
+        // se crea la burbuja de mensaje
+        HBox bubbleContainer = (HBox) MessageBubbleFactory.create(m);
+        //    dentro va el VBox con texto + timestamp
+        @SuppressWarnings("unchecked")
+        VBox bubble = (VBox) bubbleContainer.getChildren().get(0);
 
-        // 2) Traer adjuntos SOLO de este mensaje
+        // ajduntos: si el mensaje tiene adjuntos, los cargamos
         new Thread(() -> {
             try {
                 List<Attachment> atchs = ApiService.getInstance()
@@ -501,18 +497,22 @@ public class ChatController {
                 Platform.runLater(() -> {
                     for (Attachment a : atchs) {
                         Node attachNode = createAttachmentNode(a);
-                        // Lo ponemos en un HBox alineado igual que la burbuja
-                        HBox wrapper = new HBox(attachNode);
-                        boolean sentByMe = (m.getSenderId() == SessionManager.getInstance().getUserId());
-                        wrapper.setAlignment(sentByMe ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
-                        wrapper.setPadding(new Insets(2, 10, 2, 10));
-                        messagesBox.getChildren().add(wrapper);
+                        // lo metemos dentro de la burbuja
+                        bubble.getChildren().add(1, attachNode);
+                        // el índice 1 es justo después del texto, antes del timestamp
                     }
-                    // si fue primera carga, mantenemos orden, si no, ya hicimos scroll antes
+                    // si no es primera carga, hacemos scroll tras un pequeño delay:
+                    if (!wasFirstLoad) {
+                        Platform.runLater(() -> messageScrollPane.setVvalue(1.0));
+                    }
                 });
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
         }).start();
+
+        // se añade la burbuja (con adjuntos dentro) a la vista
+        messagesBox.getChildren().add(bubbleContainer);
     }
+
 }

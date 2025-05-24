@@ -339,17 +339,18 @@ public class ApiService {
         public String file_url;
         public String file_type;
         public int    file_size;
+        public String original_name;
         public String subido_en;
     }
 
-    // 3.1 Listar adjuntos de una conversación
+    // Listar adjuntos de una conversación
     public List<Attachment> getAttachments(int conversationId) throws IOException {
         String json = get("/getAttachments.php?conversation_id=" + conversationId);
         Type listType = new TypeToken<List<Attachment>>(){}.getType();
         return new Gson().fromJson(json, listType);
     }
 
-    // 3.2 Subir adjunto (multipart/form-data)
+    // sube un adjunto usando multipart/form-data
     public boolean uploadAttachment(int conversationId, File f) throws IOException {
         String boundary = Long.toHexString(System.currentTimeMillis());
         URL url = new URL(baseUrl + "/sendAttachment.php");
@@ -373,14 +374,12 @@ public class ApiService {
             out.writeBytes("Content-Type: "+Files.probeContentType(f.toPath())+"\r\n\r\n");
             Files.copy(f.toPath(), out);
             out.writeBytes("\r\n");
-
-            // fin
+            // campo file_size
             out.writeBytes("--"+boundary+"--\r\n");
         }
 
         int code = conn.getResponseCode();
         if (code != 200) throw new IOException("Upload failed HTTP "+code);
-        // leer respuesta JSON si quieres
         return true;
     }
 

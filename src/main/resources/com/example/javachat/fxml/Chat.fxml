@@ -4,24 +4,24 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<?import javafx.scene.control.TextArea?>
 
-<?import javafx.scene.control.PasswordField?>
 <BorderPane stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.javachat.controller.ChatController">
 
     <!-- IZQUIERDA -->
     <left>
         <VBox spacing="8" style="-fx-background-color: #F7F7F7;" stylesheets="@../css/style.css">
-            <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
+            <TabPane fx:id="tabPane" prefHeight="629.0" prefWidth="354.0" tabClosingPolicy="UNAVAILABLE">
                 <tabs>
 
                     <Tab text="Chats">
@@ -64,23 +64,21 @@
                         <content>
                             <VBox spacing="10" styleClass="root-pane">
                                 <padding>
-                                    <Insets top="20" right="20" bottom="20" left="20"/>
+                                    <Insets bottom="20" left="20" right="20" top="20" />
                                 </padding>
 
-                                <Label text="Mi Perfil" styleClass="title"/>
+                                <Label styleClass="title" text="Mi Perfil" />
 
                                 <!-- Campos editables -->
-                                <TextField    fx:id="profileUsername"      promptText="Usuario"        styleClass="input"/>
-                                <TextField    fx:id="profileFullName"      promptText="Nombre completo" styleClass="input"/>
-                                <TextField    fx:id="profileStatus"        promptText="Mensaje de estado" styleClass="input"/>
-                                <PasswordField fx:id="profileNewPassword" promptText="Nueva contraseña" styleClass="input"/>
-                                <PasswordField fx:id="profileConfirmPass"  promptText="Confirmar contraseña" styleClass="input"/>
+                                <TextField fx:id="profileUsername" promptText="Usuario" styleClass="input" />
+                                <TextField fx:id="profileFullName" promptText="Nombre completo" styleClass="input" />
+                                <TextField fx:id="profileStatus" promptText="Mensaje de estado" styleClass="input" />
+                                <PasswordField fx:id="profileNewPassword" promptText="Nueva contraseña" styleClass="input" />
+                                <PasswordField fx:id="profileConfirmPass" promptText="Confirmar contraseña" styleClass="input" />
 
                                 <!-- Botón Guardar -->
-                                <Button text="Guardar cambios"
-                                        onAction="#onProfileSaveClicked"
-                                        styleClass="btn-primary"/>
-                                <Label fx:id="profileMsgLabel" styleClass="error"/>
+                                <Button onAction="#onProfileSaveClicked" styleClass="btn-primary" text="Guardar cambios" />
+                                <Label fx:id="profileMsgLabel" styleClass="error" />
 
                             </VBox>
                         </content>
@@ -106,7 +104,7 @@
 
     <!-- CENTRO -->
     <center>
-        <VBox prefHeight="633.0" prefWidth="605.0" spacing="5" stylesheets="@../css/style.css">
+        <VBox prefHeight="633.0" prefWidth="641.0" spacing="5" stylesheets="@../css/style.css">
             <padding>
                 <Insets bottom="10" left="10" right="10" top="10" />
             </padding>
@@ -125,8 +123,7 @@
             </HBox>
 
             <!-- Mensajes -->
-            <ScrollPane fx:id="messageScrollPane"
-                        fitToWidth="true" fitToHeight="true" VBox.vgrow="ALWAYS">
+            <ScrollPane fx:id="messageScrollPane" fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
                 <content>
                     <VBox fx:id="messagesBox" spacing="8">
                         <padding>
@@ -139,19 +136,12 @@
 
             <HBox spacing="5">
                 <padding>
-                    <Insets top="10" right="0" bottom="0" left="0"/>
+                    <Insets bottom="0" left="0" right="0" top="10" />
                 </padding>
 
-                <TextArea fx:id="messageField"
-                          HBox.hgrow="ALWAYS"
-                          promptText="Escribe un mensaje..."
-                          wrapText="true"
-                          prefRowCount="3"/>
-                <Button text="Enviar"
-                        onAction="#onSendClicked"
-                        styleClass="btn-primary"/>
-                <Button text="📎" onAction="#onAttachClicked"
-                        styleClass="btn-secondary" />
+                <TextArea fx:id="messageField" prefHeight="69.0" prefRowCount="3" prefWidth="407.0" promptText="Escribe un mensaje..." wrapText="true" HBox.hgrow="ALWAYS" />
+                <Button onAction="#onSendClicked" styleClass="btn-primary" text="Enviar" />
+                <Button onAction="#onAttachClicked" styleClass="btn-secondary" text="📎" />
             </HBox>
 
 
