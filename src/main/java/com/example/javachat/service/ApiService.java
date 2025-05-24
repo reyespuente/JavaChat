@@ -289,4 +289,46 @@ public class ApiService {
                 .collect(Collectors.toList());
     }
 
+    // actualizar perfil
+    public boolean updateProfile(String username,
+                                 String fullName,
+                                 String statusMessage,
+                                 String newPassword,
+                                 String confirmPassword) throws IOException {
+        JsonObject p = new JsonObject();
+        p.addProperty("username", username);
+        p.addProperty("nombre_completo", fullName);
+        p.addProperty("mensaje_estado", statusMessage);
+
+        // solo actualizar la cotnra cuando no estan en blanco las celdas
+        if (newPassword != null && !newPassword.isBlank()) {
+            p.addProperty("new_password", newPassword);
+            p.addProperty("confirm_password", confirmPassword);
+        }
+
+        StatusResponse resp = post("/updateProfile.php", p, StatusResponse.class);
+        return "ok".equals(resp.status);
+    }
+
+
+    // DTO para mi propio perfil
+    private static class ProfileDTO {
+        int    id;
+        String username;
+        String nombre_completo;
+        String mensaje_estado;
+    }
+
+    // solo devuelve mi perfil de la DB
+    public User getProfile() throws IOException {
+        String json = get("/getProfile.php");
+        ProfileDTO dto = new Gson().fromJson(json, ProfileDTO.class);
+        return new User(
+                dto.id,
+                dto.username,
+                dto.nombre_completo,
+                dto.mensaje_estado
+        );
+    }
+
 }

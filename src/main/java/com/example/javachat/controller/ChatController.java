@@ -14,6 +14,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
 import java.io.IOException;
@@ -36,6 +37,15 @@ public class ChatController {
     @FXML private ListView<User> contactsList;  // User = modelo de usuario (id, username, nombre)
 
     @FXML private ScrollPane messageScrollPane; // para mantenel siempre los mensajes ultimos visibles
+
+    // para editar el perfil
+    @FXML private TextField    profileUsername;
+    @FXML private TextField    profileFullName;
+    @FXML private TextField    profileStatus;
+    @FXML private PasswordField profileNewPassword;
+    @FXML private PasswordField profileConfirmPass;
+    @FXML private Label         profileMsgLabel;
+
 
 
     private Conversation currentConv;
@@ -112,6 +122,21 @@ public class ChatController {
 
         //carga inicial de contactos
         loadContacts();
+
+        // nuevo hilo para obtener mi perfil en los tabs del chat.fxml
+        new Thread(() -> {
+            try {
+                User me = ApiService.getInstance().getProfile();
+                Platform.runLater(() -> {
+                    profileUsername.setText(me.getUsername());
+                    profileFullName.setText(me.getNombreCompleto());
+                    profileStatus.setText(me.getMensajeEstado());
+                });
+            } catch (IOException ignored) {
+            }
+        }).start();
+
+
     }
 
 
@@ -343,5 +368,44 @@ public class ChatController {
         });
 
     }
+
+    // accion al dar clic en el boton de gaurdal del chat.fxml
+    @FXML
+    private void onProfileSaveClicked() {
+        String u = profileUsername.getText().trim();
+        String n = profileFullName.getText().trim();
+        String s = profileStatus.getText().trim();
+        String p = profileNewPassword.getText();
+        String c = profileConfirmPass.getText();
+
+        // Mostrar luego luego un mensaje de guardando
+        profileMsgLabel.setTextFill(Color.GRAY);
+        profileMsgLabel.setText("Guardando…");
+
+        new Thread(() -> {
+            try {
+                boolean ok = ApiService.getInstance()
+                        .updateProfile(u, n, s, p, c);
+                Platform.runLater(() -> {
+                    if (ok) {
+                        profileMsgLabel.setTextFill(Color.web("#4CAF50"));
+                        profileMsgLabel.setText("Perfil actualizado correctamente.");
+                        // al refrescar solo limpiar los campos de la contra
+                        profileNewPassword.clear();
+                        profileConfirmPass.clear();
+                    } else {
+                        profileMsgLabel.setTextFill(Color.RED);
+                        profileMsgLabel.setText("Error al guardar perfil.");
+                    }
+                });
+            } catch (IOException e) {
+                Platform.runLater(() -> {
+                    profileMsgLabel.setTextFill(Color.RED);
+                    profileMsgLabel.setText("Fallo de red o servidor.");
+                });
+            }
+        }).start();
+    }
+
 
 }

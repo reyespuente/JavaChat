@@ -15,6 +15,7 @@
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.control.TextArea?>
 
+<?import javafx.scene.control.PasswordField?>
 <BorderPane stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.javachat.controller.ChatController">
 
     <!-- IZQUIERDA -->
@@ -61,14 +62,30 @@
 
                     <Tab text="Perfil">
                         <content>
-                            <VBox alignment="CENTER" spacing="10">
+                            <VBox spacing="10" styleClass="root-pane">
                                 <padding>
-                                    <Insets bottom="20" left="20" right="20" top="20" />
+                                    <Insets top="20" right="20" bottom="20" left="20"/>
                                 </padding>
-                                <Label text="Aquí irá tu perfil" />
+
+                                <Label text="Mi Perfil" styleClass="title"/>
+
+                                <!-- Campos editables -->
+                                <TextField    fx:id="profileUsername"      promptText="Usuario"        styleClass="input"/>
+                                <TextField    fx:id="profileFullName"      promptText="Nombre completo" styleClass="input"/>
+                                <TextField    fx:id="profileStatus"        promptText="Mensaje de estado" styleClass="input"/>
+                                <PasswordField fx:id="profileNewPassword" promptText="Nueva contraseña" styleClass="input"/>
+                                <PasswordField fx:id="profileConfirmPass"  promptText="Confirmar contraseña" styleClass="input"/>
+
+                                <!-- Botón Guardar -->
+                                <Button text="Guardar cambios"
+                                        onAction="#onProfileSaveClicked"
+                                        styleClass="btn-primary"/>
+                                <Label fx:id="profileMsgLabel" styleClass="error"/>
+
                             </VBox>
                         </content>
                     </Tab>
+
 
 
                     <Tab text="Grupos">
