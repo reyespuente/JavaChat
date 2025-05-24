@@ -7,6 +7,7 @@ import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import java.io.*;
 import java.net.*;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.example.javachat.model.Message;
@@ -329,6 +330,68 @@ public class ApiService {
                 dto.nombre_completo,
                 dto.mensaje_estado
         );
+    }
+
+    // DTO para adjunto
+    public static class Attachment {
+        public int    id;
+        public int    mensaje_id;
+        public String file_url;
+        public String file_type;
+        public int    file_size;
+        public String subido_en;
+    }
+
+    // 3.1 Listar adjuntos de una conversación
+    public List<Attachment> getAttachments(int conversationId) throws IOException {
+        String json = get("/getAttachments.php?conversation_id=" + conversationId);
+        Type listType = new TypeToken<List<Attachment>>(){}.getType();
+        return new Gson().fromJson(json, listType);
+    }
+
+    // 3.2 Subir adjunto (multipart/form-data)
+    public boolean uploadAttachment(int conversationId, File f) throws IOException {
+        String boundary = Long.toHexString(System.currentTimeMillis());
+        URL url = new URL(baseUrl + "/sendAttachment.php");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setDoOutput(true);
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Authorization","Bearer "+token);
+        conn.setRequestProperty("Content-Type","multipart/form-data; boundary="+boundary);
+
+        try(var out = new DataOutputStream(conn.getOutputStream())) {
+            // campo conversation_id
+            out.writeBytes("--"+boundary+"\r\n");
+            out.writeBytes("Content-Disposition: form-data; name=\"conversation_id\"\r\n\r\n");
+            out.writeBytes(String.valueOf(conversationId)+"\r\n");
+
+            // campo file
+            out.writeBytes("--"+boundary+"\r\n");
+            out.writeBytes(
+                    "Content-Disposition: form-data; name=\"file\"; filename=\""+f.getName()+"\"\r\n"
+            );
+            out.writeBytes("Content-Type: "+Files.probeContentType(f.toPath())+"\r\n\r\n");
+            Files.copy(f.toPath(), out);
+            out.writeBytes("\r\n");
+
+            // fin
+            out.writeBytes("--"+boundary+"--\r\n");
+        }
+
+        int code = conn.getResponseCode();
+        if (code != 200) throw new IOException("Upload failed HTTP "+code);
+        // leer respuesta JSON si quieres
+        return true;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public List<Attachment> getMessageAttachments(int messageId) throws IOException {
+        String json = get("/getMessageAttachments.php?message_id=" + messageId);
+        Type listType = new TypeToken<List<Attachment>>(){}.getType();
+        return new Gson().fromJson(json, listType);
     }
 
 }

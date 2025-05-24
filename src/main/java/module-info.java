@@ -9,6 +9,7 @@ module com.example.javachat {
     requires org.kordamp.bootstrapfx.core;
     requires eu.hansolo.tilesfx;
     requires com.google.gson;
+    requires java.desktop;
 
     opens com.example.javachat to javafx.fxml;
     opens com.example.javachat.controller to javafx.fxml;

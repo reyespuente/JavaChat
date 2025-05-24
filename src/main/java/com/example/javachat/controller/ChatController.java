@@ -13,14 +13,37 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
+import java.awt.*;
+import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.example.javachat.service.ApiService.Attachment;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.layout.HBox;
+
+
+import javafx.application.Platform;
+import javafx.scene.Node;
+import javafx.scene.Cursor;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
 public class ChatController {
     // Left pane
@@ -145,50 +168,83 @@ public class ChatController {
         int convId = conv.getId();
         convoTitle.setText(conv.getTitle());
 
-        // Si es la primera carga limpiamos todo si no solo añadimos nuevos
         boolean firstLoad = !lastTimestamp.containsKey(convId);
+        // Si es la primera vez repasamos TODO el historial
         if (firstLoad) {
             messagesBox.getChildren().clear();
+            // pintamos historial completo
+            for (Message m : conv.getMessages()) {
+                addMessageWithAttachments(m, firstLoad);
+            }
         }
 
         String since = lastTimestamp.getOrDefault(convId, "2025-01-01 00:00:00");
 
         new Thread(() -> {
             try {
-                // SOLO los mensajes nuevos
+                // 1) Traer solo mensajes nuevos
                 List<Message> nuevos = ApiService.getInstance()
                         .getMessages(convId, since);
-
-                // el mayor timestamp que llega
+                // 2) Determinar el timestamp más reciente
                 String maxTs = since;
                 for (Message m : nuevos) {
-                    if (firstLoad) {
-                        conv.getMessages().add(m);
-                    } else {
-                        conv.addMessage(m);
-                    }
-                    // convertimos el String del mensaje a comparar
                     if (m.getSentAt().compareTo(maxTs) > 0) {
                         maxTs = m.getSentAt();
                     }
+                    // Guardar en el modelo
+                    conv.addMessage(m);
                 }
 
                 final String newSince = maxTs;
                 Platform.runLater(() -> {
-                    // Añadimos las burbujas de los nuevos mensajes
+                    // 3) Añadir cada burbuja + sus adjuntos
                     for (Message m : nuevos) {
-                        messagesBox.getChildren().add(MessageBubbleFactory.create(m));
+                        addMessageWithAttachments(m, false);
                     }
-                    // Guardamos para la próxima llamada
+                    // 4) Actualizar para la próxima
                     lastTimestamp.put(convId, newSince);
+                    // 5) Auto‐scroll al fondo
+                    messageScrollPane.setVvalue(1.0);
                 });
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }).start();
-        renderMessages(conv);
     }
+
+    /** Helper para convertir un Attachment en un Node (imagen o enlace) */
+    private Node createAttachmentNode(Attachment a) {
+        // 1) Construye la URL completa
+        String base = ApiService.getInstance().getBaseUrl();
+        String url  = base + a.file_url;
+
+        if (a.file_type.startsWith("image/")) {
+            // 2) Si es imagen, miniatura clicable
+            ImageView img = new ImageView(new Image(url, 120, 0, true, true));
+            img.setCursor(Cursor.HAND);
+            img.setOnMouseClicked(e -> {
+                try {
+                    Desktop.getDesktop().browse(new URI(url));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            });
+            return img;
+        } else {
+            // 3) Si no, un enlace al archivo
+            String name = a.file_url.substring(a.file_url.lastIndexOf('/') + 1);
+            Hyperlink link = new Hyperlink(name);
+            link.setOnAction(e -> {
+                try {
+                    Desktop.getDesktop().browse(new URI(url));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            });
+            return link;
+        }
+    }
+
 
 
     @FXML
@@ -408,4 +464,55 @@ public class ChatController {
     }
 
 
+    @FXML private void onAttachClicked() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Selecciona un archivo");
+        File file = chooser.showOpenDialog(messageField.getScene().getWindow());
+        if (file == null) return;
+        // sube en un hilo
+        new Thread(() -> {
+            try {
+                int convId = currentConversationId;
+                ApiService.getInstance().uploadAttachment(convId, file);
+                // recargar adjuntos y mensajes tras subirlo
+                loadConversation(convoList.getSelectionModel().getSelectedItem());
+            } catch (IOException e) {
+                e.printStackTrace();
+                Platform.runLater(() ->
+                        new Alert(Alert.AlertType.ERROR,
+                                "No se pudo subir el archivo", ButtonType.OK)
+                                .showAndWait()
+                );
+            }
+        }).start();
+    }
+
+    /** Pinta una burbuja de mensaje + sus adjuntos debajo, con la alineación correcta */
+    private void addMessageWithAttachments(Message m, boolean wasFirstLoad) {
+        // 1) Crear burbuja
+        Node bubble = MessageBubbleFactory.create(m);
+        messagesBox.getChildren().add(bubble);
+
+        // 2) Traer adjuntos SOLO de este mensaje
+        new Thread(() -> {
+            try {
+                List<Attachment> atchs = ApiService.getInstance()
+                        .getMessageAttachments(m.getId());
+                Platform.runLater(() -> {
+                    for (Attachment a : atchs) {
+                        Node attachNode = createAttachmentNode(a);
+                        // Lo ponemos en un HBox alineado igual que la burbuja
+                        HBox wrapper = new HBox(attachNode);
+                        boolean sentByMe = (m.getSenderId() == SessionManager.getInstance().getUserId());
+                        wrapper.setAlignment(sentByMe ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+                        wrapper.setPadding(new Insets(2, 10, 2, 10));
+                        messagesBox.getChildren().add(wrapper);
+                    }
+                    // si fue primera carga, mantenemos orden, si no, ya hicimos scroll antes
+                });
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }).start();
+    }
 }

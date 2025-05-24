@@ -150,6 +150,8 @@
                 <Button text="Enviar"
                         onAction="#onSendClicked"
                         styleClass="btn-primary"/>
+                <Button text="📎" onAction="#onAttachClicked"
+                        styleClass="btn-secondary" />
             </HBox>
 
 
