@@ -87,6 +87,27 @@
                             </VBox>
                         </content>
                     </Tab>
+
+                    <!-- Grupos -->
+                    <Tab text="Grupos">
+                        <content>
+                            <VBox spacing="10">
+                                <padding>
+                                    <Insets bottom="10" left="10" right="10" top="10"/>
+                                </padding>
+                                <HBox spacing="5">
+                                    <Button text="+ Nuevo grupo"
+                                            onAction="#onNewGroupClicked"
+                                            styleClass="btn-primary"/>
+                                </HBox>
+                                <ListView fx:id="groupList" VBox.vgrow="ALWAYS">
+                                    <placeholder>
+                                        <Label text="Sin grupos aún"/>
+                                    </placeholder>
+                                </ListView>
+                            </VBox>
+                        </content>
+                    </Tab>
                 </tabs>
             </TabPane>
         </VBox>

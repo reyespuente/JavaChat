@@ -7,12 +7,16 @@ import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.example.javachat.model.Message;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -20,7 +24,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class ApiService {
 
     /// //////////////////////////////////////////////
-    public static boolean debug = false;
+    public static boolean debug = true;
     /// /////////////////////////////////////////////
 
     private final String baseUrl = "https://api.reyespuente.com";
@@ -133,8 +137,9 @@ public class ApiService {
 
     /** DTO para listar conversaciones */
     private static class ConversationDTO {
-        int id;
+        int    id;
         String title;
+        String type;
     }
 
     /** DTO para listar mensajes */
@@ -151,16 +156,18 @@ public class ApiService {
         Type listType = new TypeToken<List<ConversationDTO>>(){}.getType();
         List<ConversationDTO> dtos = new Gson().fromJson(json, listType);
 
-        return dtos.stream()
-                .map(d -> new Conversation(d.id, d.title))
-                .collect(Collectors.toList());
+        return dtos.stream().map(d -> {
+            Conversation c = new Conversation(d.id, d.title);
+            c.setType(d.type);
+            return c;
+        }).collect(Collectors.toList());
     }
 
     // obtener mensajes de la conversacion
     public List<Message> getMessages(int conversationId, String since) throws IOException {
         String query = String.format("?conversation_id=%d&since=%s",
                 conversationId,
-                URLEncoder.encode(since, UTF_8)
+                URLEncoder.encode(since, StandardCharsets.UTF_8)
         );
         String json = get("/getMessages.php" + query);
         Type listType = new TypeToken<List<MessageDTO>>(){}.getType();
@@ -170,6 +177,7 @@ public class ApiService {
                 .map(m -> new Message(m.id, m.sender_id, m.content, m.sent_at))
                 .collect(Collectors.toList());
     }
+
 
 
 
@@ -391,6 +399,50 @@ public class ApiService {
         String json = get("/getMessageAttachments.php?message_id=" + messageId);
         Type listType = new TypeToken<List<Attachment>>(){}.getType();
         return new Gson().fromJson(json, listType);
+    }
+
+
+    private static class CreateGroupResp {
+        public int conversation_id;
+    }
+
+    // Crea un grupo con título y lista de IDs de miembros devuelve el conversation_id creado.
+    public int createGroup(String title, List<Integer> memberIds) throws IOException {
+        JsonObject p = new JsonObject();
+        p.addProperty("title", title);
+        JsonArray arr = new JsonArray();
+        memberIds.forEach(arr::add);
+        p.add("members", arr);
+
+        CreateGroupResp resp = post("/createGroup.php", p, CreateGroupResp.class);
+        return resp.conversation_id;
+    }
+
+    // Agrega un miembro a un grupo existente
+    public boolean addGroupMember(int convId, int userId) throws IOException {
+        JsonObject p = new JsonObject();
+        p.addProperty("conversation_id", convId);
+        p.addProperty("user_id", userId);
+        StatusResponse r = post("/addGroupMember.php", p, StatusResponse.class);
+        return "ok".equals(r.status);
+    }
+
+    // eliminar un miembro
+    public boolean removeGroupMember(int convId, int userId) throws IOException {
+        JsonObject p = new JsonObject();
+        p.addProperty("conversation_id", convId);
+        p.addProperty("user_id", userId);
+        StatusResponse r = post("/removeGroupMember.php", p, StatusResponse.class);
+        return "ok".equals(r.status);
+    }
+
+    // renombrar grupo
+    public boolean renameGroup(int convId, String newTitle) throws IOException {
+        JsonObject p = new JsonObject();
+        p.addProperty("conversation_id", convId);
+        p.addProperty("title", newTitle);
+        StatusResponse r = post("/renameGroup.php", p, StatusResponse.class);
+        return "ok".equals(r.status);
     }
 
 }
