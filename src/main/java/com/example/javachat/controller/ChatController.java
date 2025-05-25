@@ -188,6 +188,24 @@ public class ChatController {
                 });
             } catch (IOException ignored) {}
         }).start();
+
+        // para mostrar los mensajes no leidos
+        convoList.getSelectionModel().selectedItemProperty().addListener((obs, old, conv) -> {
+            if (conv != null) {
+                currentConversationId = conv.getId();
+                convoTitle.setText(conv.getTitle());
+                conv.clearUnreadCount();
+                loadConversation(conv);
+            }
+        });
+        groupList.getSelectionModel().selectedItemProperty().addListener((obs, old, grp) -> {
+            if (grp != null) {
+                currentConversationId = grp.getId();
+                convoTitle.setText(grp.getTitle());
+                grp.clearUnreadCount();
+                loadConversation(grp);
+            }
+        });
     }
 
 
@@ -200,7 +218,7 @@ public class ChatController {
         new Thread(() -> {
             try {
                 List<Message> all = ApiService.getInstance()
-                        .getMessages(convId, "1970-01-01 00:00:00");
+                        .getMessages(convId, "2025-01-01 00:00:00");
                 Platform.runLater(() -> {
                     conv.getMessages().setAll(all);
                     for (Message m : all) {
@@ -221,7 +239,7 @@ public class ChatController {
         Conversation sel = convoList.getSelectionModel().getSelectedItem();
         if (sel == null) return;
         int convId = sel.getId();
-        String since = lastTimestamp.getOrDefault(convId, "1970-01-01 00:00:00");
+        String since = lastTimestamp.getOrDefault(convId, "2025-01-01 00:00:00");
 
         new Thread(() -> {
             try {
@@ -232,12 +250,22 @@ public class ChatController {
                         .max(String::compareTo)
                         .orElse(since);
                 Platform.runLater(() -> {
+                    // Si esta conversación NO está activa, marcaremos como no leída
+                    int selectedId = convoList.getSelectionModel().getSelectedItem().getId();
+                    if (selectedId != convId) {
+                        // todos los mensajes nuevos son "no leídos"
+                        sel.incrementUnreadCount(nuevos.size());
+                    }
+                    // Igual los agregamos al UI del chat si está abierto
                     for (Message m : nuevos) {
                         sel.addMessage(m);
                         messagesBox.getChildren().add(MessageBubbleFactory.create(m));
                     }
                     lastTimestamp.put(convId, maxTs);
-                    messageScrollPane.setVvalue(1.0);
+                    // si es la conversación abierta, hacemos scroll
+                    if (selectedId == convId) {
+                        messageScrollPane.setVvalue(1.0);
+                    }
                 });
             } catch (IOException ex) {
                 ex.printStackTrace();
