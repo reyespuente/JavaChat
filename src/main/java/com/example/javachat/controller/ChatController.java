@@ -332,13 +332,20 @@ public class ChatController {
     // mostrar la informacion del usuario en el boton de info que ya estaba en la ecena del chat
     @FXML
     private void onInfoClicked() {
-        Conversation conv = convoList.getSelectionModel().getSelectedItem();
+        // depende la pestaña de chats o de grupos
+        Tab selTab = tabPane.getSelectionModel().getSelectedItem();
+        Conversation conv;
+        if ("Grupos".equals(selTab.getText())) {
+            conv = groupList.getSelectionModel().getSelectedItem();
+        } else {
+            conv = convoList.getSelectionModel().getSelectedItem();
+        }
         if (conv == null) return;
 
+        // cargar la info
         new Thread(() -> {
             try {
                 List<User> members = ApiService.getInstance().getConversationMembers(conv.getId());
-                // NO MOSTRAR MI MISMA INFOOOOOO
                 int me = SessionManager.getInstance().getUserId();
                 List<User> others = members.stream()
                         .filter(u -> u.getId() != me)
@@ -346,10 +353,8 @@ public class ChatController {
 
                 Platform.runLater(() -> {
                     if (others.size() == 1) {
-                        // mostrar la info
                         showUserInfo(others.get(0));
                     } else {
-                        // grupo como es grupo hay q seleccionar a cual le vamos a ver la info
                         ChoiceDialog<User> dlg = new ChoiceDialog<>(others.get(0), others);
                         dlg.setTitle("Participantes de “" + conv.getTitle() + "”");
                         dlg.setHeaderText("Selecciona un usuario");
@@ -368,6 +373,7 @@ public class ChatController {
             }
         }).start();
     }
+
 
     //la info
     private void showUserInfo(User user) {
