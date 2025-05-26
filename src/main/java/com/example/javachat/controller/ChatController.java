@@ -313,7 +313,6 @@ public class ChatController {
     private void onSendClicked() {
         String text = messageField.getText().trim();
         if (text.isEmpty() || currentConversationId == 0) {
-            // ahora si mostrarlo en pantalla :v
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Atención");
             alert.setHeaderText(null);
@@ -322,7 +321,6 @@ public class ChatController {
             return;
         }
 
-        // ERROR CORREGIDO DE DOBLEMENSAJE
         messageField.setDisable(true);
         if (ApiService.debug) {
             System.out.println("Enviando mensaje: \"" + text + "\" a conv " + currentConversationId);
@@ -331,27 +329,38 @@ public class ChatController {
         new Thread(() -> {
             try {
                 boolean ok = ApiService.getInstance().sendMessage(currentConversationId, text);
-                if (ApiService.debug) {
-                    System.out.println("sendMessage returned: " + ok);
-                }
+
                 Platform.runLater(() -> {
                     messageField.setDisable(false);
                     if (ok) {
                         messageField.clear();
-                        // Recarga la conversación para ver el nuevo mensaje
-                        Conversation conv = convoList.getSelectionModel().getSelectedItem();
-                        if (conv != null) {
-                            loadConversation(conv);
+
+                        // Crear mensaje local
+                        Message localMessage = new Message(
+                                -1, // ID temporal
+                                SessionManager.getInstance().getUserId(),
+                                text,
+                                new java.util.Date().toString()
+                        );
+
+                        // Agregar localmente
+                        Conversation currentConv = convoList.getSelectionModel().getSelectedItem();
+                        if (currentConv != null) {
+                            currentConv.addMessage(localMessage);
+                            Node messageNode = MessageBubbleFactory.create(localMessage);
+                            messageNode.setUserData(localMessage); // Guardar referencia
+                            messagesBox.getChildren().add(messageNode);
+                            messageScrollPane.setVvalue(1.0);
                         }
                     } else {
                         System.err.println("Error: sendMessage devolvió false");
                     }
                 });
             } catch (IOException e) {
-                e.printStackTrace();
                 Platform.runLater(() -> {
                     messageField.setDisable(false);
                 });
+                e.printStackTrace();
             }
         }).start();
     }
@@ -703,108 +712,145 @@ public class ChatController {
         });
     }
 
-    private void onAddGroupMember(Conversation grp) {
-        if (grp==null) return;
+    private void onAddGroupMember(Conversation group) {
+        if (group == null) return;
+
         new Thread(() -> {
             try {
-                // Traigo todos mis contactos y los miembros actuales
-                List<User> contacts = ApiService.getInstance().listContacts();
-                List<User> members  = ApiService.getInstance().getConversationMembers(grp.getId());
-                Set<Integer> memberIds = members.stream()
+                List<User> currentMembers = ApiService.getInstance().getConversationMembers(group.getId());
+                Set<Integer> currentMemberIds = currentMembers.stream()
                         .map(User::getId)
                         .collect(Collectors.toSet());
-                List<User> candidates = contacts.stream()
-                        .filter(u -> !memberIds.contains(u.getId()))
-                        .toList();
-                Platform.runLater(() -> {
-                    Dialog<List<User>> dlg = new Dialog<>();
-                    dlg.setTitle("Agregar miembros a \""+grp.getTitle()+"\"");
-                    dlg.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
-                    ListView<CheckBox> listView = new ListView<>();
-                    for (User u : candidates) {
-                        CheckBox cb = new CheckBox(u.getDisplayName());
-                        cb.setUserData(u);
-                        listView.getItems().add(cb);
-                    }
-                    dlg.getDialogPane().setContent(listView);
-                    dlg.setResultConverter(btn -> {
-                        if (btn == ButtonType.OK) {
-                            return listView.getItems().stream()
-                                    .filter(CheckBox::isSelected)
-                                    .map(cb -> (User)cb.getUserData())
-                                    .toList();
+                List<User> availableContacts = contactsList.getItems().stream()
+                        .filter(contact -> !currentMemberIds.contains(contact.getId()))
+                        .collect(Collectors.toList());
+
+                if (availableContacts.isEmpty()) {
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Información");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Todos tus contactos ya están en el grupo");
+                        alert.showAndWait();
+                    });
+                    return;
+                }
+
+                Platform.runLater(() -> {
+                    Dialog<List<User>> dialog = new Dialog<>();
+                    dialog.setTitle("Agregar miembros a " + group.getTitle());
+
+                    ListView<User> selectionList = new ListView<>(FXCollections.observableArrayList(availableContacts));
+                    selectionList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+                    dialog.getDialogPane().setContent(selectionList);
+                    dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+                    dialog.setResultConverter(buttonType -> {
+                        if (buttonType == ButtonType.OK) {
+                            return selectionList.getSelectionModel().getSelectedItems();
                         }
                         return null;
                     });
 
-                    dlg.showAndWait().ifPresent(sel -> {
-                        if (sel.isEmpty()) return;
-                        new Thread(() -> {
-                            for (User u : sel) {
-                                try {
-                                    ApiService.getInstance().addGroupMember(grp.getId(), u.getId());
-                                } catch (IOException ex) {
-                                    ex.printStackTrace();
+                    dialog.showAndWait().ifPresent(selectedUsers -> {
+                        if (!selectedUsers.isEmpty()) {
+                            new Thread(() -> {
+                                for (User user : selectedUsers) {
+                                    try {
+                                        boolean success = ApiService.getInstance()
+                                                .addGroupMember(group.getId(), user.getId());
+
+                                        if (success) {
+                                            Platform.runLater(() -> {
+                                                Alert info = new Alert(Alert.AlertType.INFORMATION);
+                                                info.setTitle("Éxito");
+                                                info.setHeaderText(null);
+                                                info.setContentText(user.getDisplayName() + " ha sido agregado al grupo");
+                                                info.showAndWait();
+                                            });
+                                        }
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
                                 }
-                            }
-                            // refrescar la vista de miembros, o recargar la conversación
-                        }).start();
+                            }).start();
+                        }
                     });
                 });
-            } catch (IOException ex) {
-                ex.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }).start();
     }
 
-    private void onRemoveGroupMember(Conversation grp) {
-        if (grp==null) return;
+    private void onRemoveGroupMember(Conversation group) {
+        if (group == null) return;
+
         new Thread(() -> {
             try {
-                List<User> members = ApiService.getInstance().getConversationMembers(grp.getId());
-                // excluyo a yo
-                int me = SessionManager.getInstance().getUserId();
-                List<User> candidates = members.stream()
-                        .filter(u -> u.getId() != me)
-                        .toList();
-                Platform.runLater(() -> {
-                    Dialog<List<User>> dlg = new Dialog<>();
-                    dlg.setTitle("Quitar miembros de \""+grp.getTitle()+"\"");
-                    dlg.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+                int currentUserId = SessionManager.getInstance().getUserId();
+                List<User> members = ApiService.getInstance().getConversationMembers(group.getId())
+                        .stream()
+                        .filter(u -> u.getId() != currentUserId)
+                        .collect(Collectors.toList());
 
-                    ListView<CheckBox> listView = new ListView<>();
-                    for (User u : candidates) {
-                        CheckBox cb = new CheckBox(u.getDisplayName());
-                        cb.setUserData(u);
-                        listView.getItems().add(cb);
-                    }
-                    dlg.getDialogPane().setContent(listView);
-                    dlg.setResultConverter(btn -> {
-                        if (btn == ButtonType.OK) {
-                            return listView.getItems().stream()
-                                    .filter(CheckBox::isSelected)
-                                    .map(cb -> (User)cb.getUserData())
-                                    .toList();
+                if (members.isEmpty()) {
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Información");
+                        alert.setHeaderText(null);
+                        alert.setContentText("No hay miembros para eliminar");
+                        alert.showAndWait();
+                    });
+                    return;
+                }
+
+                Platform.runLater(() -> {
+                    Dialog<List<User>> dialog = new Dialog<>();
+                    dialog.setTitle("Eliminar miembros de " + group.getTitle());
+
+                    ListView<User> memberListView = new ListView<>(FXCollections.observableArrayList(members));
+                    memberListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+                    dialog.getDialogPane().setContent(memberListView);
+                    dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+                    dialog.setResultConverter(buttonType -> {
+                        if (buttonType == ButtonType.OK) {
+                            return memberListView.getSelectionModel().getSelectedItems();
                         }
                         return null;
                     });
 
-                    dlg.showAndWait().ifPresent(sel -> {
-                        if (sel.isEmpty()) return;
-                        new Thread(() -> {
-                            for (User u : sel) {
-                                try {
-                                    ApiService.getInstance().removeGroupMember(grp.getId(), u.getId());
-                                } catch (IOException ex) {
-                                    ex.printStackTrace();
+                    dialog.showAndWait().ifPresent(selectedUsers -> {
+                        if (!selectedUsers.isEmpty()) {
+                            new Thread(() -> {
+                                for (User user : selectedUsers) {
+                                    try {
+                                        boolean success = ApiService.getInstance()
+                                                .removeGroupMember(group.getId(), user.getId());
+
+                                        if (success) {
+                                            Platform.runLater(() -> {
+                                                Alert info = new Alert(Alert.AlertType.INFORMATION);
+                                                info.setTitle("Éxito");
+                                                info.setHeaderText(null);
+                                                info.setContentText(user.getDisplayName() + " ha sido eliminado del grupo");
+                                                info.showAndWait();
+                                            });
+                                        }
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
                                 }
-                            }
-                        }).start();
+                            }).start();
+                        }
                     });
                 });
-            } catch (IOException ex) {
-                ex.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }).start();
     }
