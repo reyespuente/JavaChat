@@ -218,22 +218,29 @@ public class ChatController {
         new Thread(() -> {
             try {
                 List<Message> all = ApiService.getInstance()
-                        .getMessages(convId, "2025-01-01 00:00:00");
+                        .getMessages(convId, "1970-01-01 00:00:00");
+
                 Platform.runLater(() -> {
                     conv.getMessages().setAll(all);
+                    // en lugar de crear sólo burbujas de texto:
                     for (Message m : all) {
-                        messagesBox.getChildren().add(MessageBubbleFactory.create(m));
+                        // true = primera carga, así no hacemos scroll por cada adjunto
+                        addMessageWithAttachments(m, true);
                     }
                     if (!all.isEmpty()) {
-                        lastTimestamp.put(convId, all.get(all.size()-1).getSentAt());
+                        lastTimestamp.put(convId,
+                                all.get(all.size()-1).getSentAt()
+                        );
                     }
                     messageScrollPane.setVvalue(1.0);
                 });
+
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
         }).start();
     }
+
 
     private void refreshNewMessages() {
         Conversation sel = convoList.getSelectionModel().getSelectedItem();
@@ -312,58 +319,51 @@ public class ChatController {
     @FXML
     private void onSendClicked() {
         String text = messageField.getText().trim();
-        if (text.isEmpty() || currentConversationId == 0) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Atención");
-            alert.setHeaderText(null);
-            alert.setContentText("No hay mensaje que enviar o no ha seleccionado una conversación.");
-            alert.showAndWait();
+        if (text.isEmpty()) {
+            new Alert(Alert.AlertType.WARNING,
+                    "No hay mensaje que enviar.",
+                    ButtonType.OK).showAndWait();
             return;
         }
 
-        messageField.setDisable(true);
-        if (ApiService.debug) {
-            System.out.println("Enviando mensaje: \"" + text + "\" a conv " + currentConversationId);
+        Conversation target;
+        Tab sel = tabPane.getSelectionModel().getSelectedItem();
+        if ("Grupos".equals(sel.getText())) {
+            target = groupList.getSelectionModel().getSelectedItem();
+        } else {
+            target = convoList.getSelectionModel().getSelectedItem();
         }
+
+        if (target == null) {
+            new Alert(Alert.AlertType.WARNING,
+                    "No hay ninguna conversación seleccionada.",
+                    ButtonType.OK).showAndWait();
+            return;
+        }
+
+        int convId = target.getId();
+        messageField.setDisable(true);
 
         new Thread(() -> {
             try {
-                boolean ok = ApiService.getInstance().sendMessage(currentConversationId, text);
-
+                boolean ok = ApiService.getInstance().sendMessage(convId, text);
                 Platform.runLater(() -> {
                     messageField.setDisable(false);
                     if (ok) {
                         messageField.clear();
-
-                        // Crear mensaje local
-                        Message localMessage = new Message(
-                                -1, // ID temporal
-                                SessionManager.getInstance().getUserId(),
-                                text,
-                                new java.util.Date().toString()
-                        );
-
-                        // Agregar localmente
-                        Conversation currentConv = convoList.getSelectionModel().getSelectedItem();
-                        if (currentConv != null) {
-                            currentConv.addMessage(localMessage);
-                            Node messageNode = MessageBubbleFactory.create(localMessage);
-                            messageNode.setUserData(localMessage); // Guardar referencia
-                            messagesBox.getChildren().add(messageNode);
-                            messageScrollPane.setVvalue(1.0);
-                        }
+                        loadConversation(target);
                     } else {
                         System.err.println("Error: sendMessage devolvió false");
                     }
                 });
             } catch (IOException e) {
-                Platform.runLater(() -> {
-                    messageField.setDisable(false);
-                });
                 e.printStackTrace();
+                Platform.runLater(() -> messageField.setDisable(false));
             }
         }).start();
     }
+
+
 
 
     // mostrar la informacion del usuario en el boton de info que ya estaba en la ecena del chat
@@ -550,18 +550,22 @@ public class ChatController {
     }
 
 
-    @FXML private void onAttachClicked() {
+    @FXML
+    private void onAttachClicked() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Selecciona un archivo");
         File file = chooser.showOpenDialog(messageField.getScene().getWindow());
         if (file == null) return;
-        // sube en un hilo
+
         new Thread(() -> {
             try {
                 int convId = currentConversationId;
                 ApiService.getInstance().uploadAttachment(convId, file);
-                // recargar adjuntos y mensajes tras subirlo
-                loadConversation(convoList.getSelectionModel().getSelectedItem());
+                // recargar en FX
+                Platform.runLater(() -> {
+                    Conversation sel = convoList.getSelectionModel().getSelectedItem();
+                    if (sel != null) loadConversation(sel);
+                });
             } catch (IOException e) {
                 e.printStackTrace();
                 Platform.runLater(() ->
@@ -572,6 +576,7 @@ public class ChatController {
             }
         }).start();
     }
+
 
     // los adjuntos se añaden a la burbuja del mensaje
     private void addMessageWithAttachments(Message m, boolean wasFirstLoad) {
