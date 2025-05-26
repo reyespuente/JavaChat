@@ -33,12 +33,10 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.Set;
-import java.util.HashSet;
+
 import com.example.javachat.service.ApiService.Attachment;
 import javafx.scene.Node;
 import javafx.scene.Cursor;
@@ -243,42 +241,49 @@ public class ChatController {
 
 
     private void refreshNewMessages() {
-        Conversation sel = convoList.getSelectionModel().getSelectedItem();
+        // determinar si es chat o grupo
+        Conversation sel;
+        Tab selTab = tabPane.getSelectionModel().getSelectedItem();
+        if ("Grupos".equals(selTab.getText())) {
+            sel = groupList.getSelectionModel().getSelectedItem();
+        } else {
+            sel = convoList.getSelectionModel().getSelectedItem();
+        }
         if (sel == null) return;
+
         int convId = sel.getId();
         String since = lastTimestamp.getOrDefault(convId, "2025-01-01 00:00:00");
 
         new Thread(() -> {
             try {
-                List<Message> nuevos = ApiService.getInstance().getMessages(convId, since);
+                List<Message> nuevos = ApiService.getInstance()
+                        .getMessages(convId, since);
                 if (nuevos.isEmpty()) return;
                 String maxTs = nuevos.stream()
                         .map(Message::getSentAt)
                         .max(String::compareTo)
                         .orElse(since);
+
                 Platform.runLater(() -> {
-                    // Si esta conversación NO está activa, marcaremos como no leída
-                    int selectedId = convoList.getSelectionModel().getSelectedItem().getId();
-                    if (selectedId != convId) {
-                        // todos los mensajes nuevos son "no leídos"
-                        sel.incrementUnreadCount(nuevos.size());
-                    }
-                    // Igual los agregamos al UI del chat si está abierto
                     for (Message m : nuevos) {
+                        boolean yaLoTengo = sel.getMessages().stream()
+                                .anyMatch(old -> old.getId() == m.getId());
+                        if (yaLoTengo) continue;
+
                         sel.addMessage(m);
-                        messagesBox.getChildren().add(MessageBubbleFactory.create(m));
+                        messagesBox.getChildren()
+                                .add(MessageBubbleFactory.create(m));
                     }
                     lastTimestamp.put(convId, maxTs);
-                    // si es la conversación abierta, hacemos scroll
-                    if (selectedId == convId) {
-                        messageScrollPane.setVvalue(1.0);
-                    }
+                    messageScrollPane.setVvalue(1.0);
                 });
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
         }).start();
     }
+
+
 
 
 
@@ -326,6 +331,7 @@ public class ChatController {
             return;
         }
 
+        // chat o grupo
         Conversation target;
         Tab sel = tabPane.getSelectionModel().getSelectedItem();
         if ("Grupos".equals(sel.getText())) {
@@ -333,7 +339,6 @@ public class ChatController {
         } else {
             target = convoList.getSelectionModel().getSelectedItem();
         }
-
         if (target == null) {
             new Alert(Alert.AlertType.WARNING,
                     "No hay ninguna conversación seleccionada.",
@@ -344,6 +349,7 @@ public class ChatController {
         int convId = target.getId();
         messageField.setDisable(true);
 
+        // Enviar y, si OK, disparar refreshNewMessages()
         new Thread(() -> {
             try {
                 boolean ok = ApiService.getInstance().sendMessage(convId, text);
@@ -351,7 +357,7 @@ public class ChatController {
                     messageField.setDisable(false);
                     if (ok) {
                         messageField.clear();
-                        loadConversation(target);
+                        refreshNewMessages();
                     } else {
                         System.err.println("Error: sendMessage devolvió false");
                     }
@@ -362,6 +368,8 @@ public class ChatController {
             }
         }).start();
     }
+
+
 
 
 
